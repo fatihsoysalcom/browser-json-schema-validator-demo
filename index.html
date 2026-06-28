@@ -1,0 +1,93 @@
+<html>
+<head>
+<title>JSON Schema Validator Demo</title>
+<script src="https://cdn.jsdelivr.net/npm/ajv-dist/ajv.min.js"></script>
+<style>
+  body { font-family: sans-serif; }
+  textarea { width: 95%; height: 150px; margin-bottom: 10px; }
+  pre { background-color: #f4f4f4; padding: 10px; border: 1px solid #ddd; }
+  .valid { color: green; }
+  .invalid { color: red; }
+</style>
+</head>
+<body>
+
+<h1>Tarayıcı Tabanlı JSON Schema Doğrulayıcı Demo</h1>
+
+<p>Bu demo, tarayıcıda JSON verilerini JSON Schema'ya göre doğrulamak için AJV kütüphanesini kullanır. Draft-07 standardı, <code>$ref</code>, <code>allOf</code>, <code>anyOf</code>, <code>oneOf</code> ve <code>if/then/else</code> gibi özellikleri destekler.</p>
+
+<h2>JSON Schema (Draft-07)</h2>
+<textarea id="schema">{
+  "type": "object",
+  "properties": {
+    "name": {"type": "string"},
+    "age": {"type": "integer", "minimum": 0},
+    "email": {"type": "string", "format": "email"},
+    "isStudent": {"type": "boolean"},
+    "courses": {
+      "type": "array",
+      "items": {"type": "string"}
+    }
+  },
+  "required": ["name", "age"],
+  "allOf": [
+    {
+      "if": {"properties": {"isStudent": {"const": true}}},
+      "then": {"required": ["courses"]}
+    }
+  ],
+  "anyOf": [
+    {"properties": {"age": {"maximum": 18}}},
+    {"properties": {"age": {"minimum": 65}}}
+  ]
+}</textarea>
+
+<h2>JSON Verisi</h2>
+<textarea id="data">{
+  "name": "Ahmet",
+  "age": 25,
+  "email": "ahmet@example.com",
+  "isStudent": false
+}</textarea>
+
+<button onclick="validateJson()">Doğrula</button>
+
+<h2>Sonuç</h2>
+<div id="result"></div>
+
+<script>
+  const ajv = new Ajv(); // AJV instance oluşturulur
+
+  function validateJson() {
+    const schemaText = document.getElementById('schema').value;
+    const dataText = document.getElementById('data').value;
+    const resultDiv = document.getElementById('result');
+
+    let schema;
+    let data;
+
+    try {
+      schema = JSON.parse(schemaText);
+      data = JSON.parse(dataText);
+    } catch (e) {
+      resultDiv.innerHTML = `<p class='invalid'>JSON ayrıştırma hatası: ${e.message}</p>`;
+      return;
+    }
+
+    try {
+      const validate = ajv.compile(schema); // Schema derlenir
+      const isValid = validate(data); // Veri doğrulanır
+
+      if (isValid) {
+        resultDiv.innerHTML = "<p class='valid'>Veri geçerli!</p>";
+      } else {
+        resultDiv.innerHTML = "<p class='invalid'>Veri geçersiz:</p><pre>" + ajv.errorsText(validate.errors) + "</pre>";
+      }
+    } catch (e) {
+      resultDiv.innerHTML = `<p class='invalid'>Doğrulama hatası: ${e.message}</p>`;
+    }
+  }
+</script>
+
+</body>
+</html>
